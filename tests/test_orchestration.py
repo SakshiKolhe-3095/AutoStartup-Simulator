@@ -10,7 +10,7 @@ def test_graph_runs_with_valid_idea(mock_llm):
     app = build_graph()
     result = app.invoke({"idea": "AI-powered plant disease detector for farmers"})
 
-    assert result["status"] == "running"
+    assert result["status"] == "done"
     assert result["cmo_output"] is not None
     assert result["cto_output"] is not None
     assert result["cfo_output"] is not None
@@ -59,3 +59,9 @@ def test_no_rebuttal_when_answer_strong(mock_investor_llm, mock_ceo_llm):
 
     transcript = result["investor_transcript"]
     assert all("rebuttal" not in entry for entry in transcript)
+
+@patch("backend.agents.ceo_agent.call_llm", return_value="Mocked pitch narrative.")
+def test_status_is_done_on_successful_run(mock_llm):
+    app = build_graph()
+    result = app.invoke({"idea": "AI-powered plant disease detector for farmers"})
+    assert result["status"] == "done"

@@ -27,6 +27,12 @@ def cfo_stub(state: AgentState) -> dict:
     return {"cfo_output": {"funding_ask": "TBD - stub", "revenue_model": "TBD"}}
 
 
+def route_after_parse(state: AgentState) -> str:
+    """If parse_idea failed, skip straight to END instead of running the rest of the pipeline."""
+    if state.get("status") == "failed":
+        return "end"
+    return "continue"
+
 def build_graph():
     graph = StateGraph(AgentState)
 
