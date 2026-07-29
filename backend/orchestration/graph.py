@@ -9,8 +9,14 @@ logger = get_logger(__name__)
 
 
 # --- stub nodes until Faiza/Lakshit/Sakshi wire real agents in ---
-def cmo_stub(state: AgentState) -> dict:
-    return {"cmo_output": {"tam": "TBD - stub", "competitors": [], "persona": "TBD"}}
+# def cmo_stub(state: AgentState) -> dict:
+#     return {"cmo_output": {"tam": "TBD - stub", "competitors": [], "persona": "TBD"}}
+
+def cmo_node(state: AgentState) -> dict:
+    from backend.agents.cmo_agent import CMOAgent
+    agent = CMOAgent()
+    result = agent.run(state["idea"])
+    return {"cmo_output": result}
 
 
 def cto_stub(state: AgentState) -> dict:
@@ -25,7 +31,8 @@ def build_graph():
     graph = StateGraph(AgentState)
 
     graph.add_node("parse_idea", parse_idea)
-    graph.add_node("cmo", cmo_stub)
+    # graph.add_node("cmo", cmo_stub)
+    graph.add_node("cmo", cmo_node)
     graph.add_node("cto", cto_stub)
     graph.add_node("cfo", cfo_stub)
     graph.add_node("synthesize", synthesize)
