@@ -31,11 +31,14 @@ def select_questions(state: AgentState, n: int = 5) -> dict:
     return {"investor_questions": questions[:n], "investor_transcript": [], "idea_category": idea_category}
 
 def score_pitch(state: AgentState) -> dict:
-    """Stub scorer — replaced with LLM-based scoring in Week 8."""
+    """Stub scorer — replaced with LLM-based scoring in Week 8. Also marks pipeline complete."""
+    if state.get("status") == "failed":
+        return {}   # don't overwrite failure status
     transcript = state.get("investor_transcript", [])
     answered = sum(1 for t in transcript if t.get("a"))
     total = max(len(state.get("investor_questions", [])), 1)
-    return {"investor_score": round((answered / total) * 10)}
+    score = round((answered / total) * 10)
+    return {"investor_score": score, "status": "done"}
 
 def generate_rebuttal(question: str, ceo_answer: str) -> str:
     """Investor pushes back once on a weak/vague CEO answer."""
