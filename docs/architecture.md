@@ -74,3 +74,12 @@
 - tests/test_cfo_agent.py added; tests/test_orchestration.py updated to mock
   WebSearchTool + cmo/cfo call_llm (previously only ceo_agent.call_llm was mocked, which
   broke once cmo_stub/cfo_stub were replaced with real nodes) and to cover cfo_output
+
+
+  ## Milestone — Full pipeline first successful end-to-end run (real agents)
+All four agents (CMO/CTO/CFO/Investor) now run with real logic (no stubs remaining).
+Verified: 42/42 tests passing, landing page generated + validated + saved locally,
+CFO output correctly grounded in CMO's market sizing, investor Q&A + rebuttal loop working.
+Fixed: missing beautifulsoup4 dependency in requirements files (added post-merge).
+Known non-blocking issue: CMO persona generation still returns empty fields when local
+Ollama LLM is unreachable (WinError 10061) — falls back silently, not yet investigated.
