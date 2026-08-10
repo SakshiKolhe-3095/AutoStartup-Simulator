@@ -36,3 +36,21 @@
 - CMO-agent (Faiza): in progress, behind schedule — pending final merge
 - CFO-agent (Sakshi): status TBD — pending check
 - CTO-agent (Lakshit): not started, scheduled Week 5
+
+## Week 5 status (Lakshit side)
+- CTO-agent (backend/agents/cto_agent.py): v1 done — MVP feature spec, tech stack
+  recommendation, architecture summary, all category-grounded (saas/marketplace/
+  mobile_app/consumer)
+- Landing page codegen (backend/tools/codegen.py + html_validator.py): LLM -> single-file
+  HTML+Tailwind, generate -> validate -> self-correct retry loop (max 3 attempts), hardcoded
+  fallback template on repeated failure
+- Local "deploy" step (backend/tools/deploy.py): writes generated page to
+  data/landing_pages/<slug>.html
+- backend/agents/schemas.py added: pydantic CTOOutput/MVPFeature/TechStackRecommendation/
+  LandingPageValidation — documents the exact contract CTOAgent.run() returns for the
+  deck-builder step and CEO synthesis
+- graph.py: cto_stub replaced with real cto_node
+- Reused the existing shared backend/models/llm_client.call_llm (Groq) rather than adding a
+  second LLM provider abstraction — CTO-agent doesn't need web search, so Tavily/web_search.py
+  wasn't touched either
+- tests/test_cto_agent.py, tests/test_landing_page_gen.py, tests/test_deploy.py added
