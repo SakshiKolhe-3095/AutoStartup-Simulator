@@ -90,6 +90,9 @@ class CMOAgent:
         )
         # raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.5)
         raw = self._call_local_llm(prompt=f"Startup idea: {idea}", system=system)
+        if not raw:
+            logger.warning("Local LLM unavailable, falling back to Groq for persona generation")
+            raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.5)
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
