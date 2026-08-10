@@ -74,3 +74,28 @@
 - tests/test_cfo_agent.py added; tests/test_orchestration.py updated to mock
   WebSearchTool + cmo/cfo call_llm (previously only ceo_agent.call_llm was mocked, which
   broke once cmo_stub/cfo_stub were replaced with real nodes) and to cover cfo_output
+
+
+  ## Milestone — Full pipeline first successful end-to-end run (real agents)
+All four agents (CMO/CTO/CFO/Investor) now run with real logic (no stubs remaining).
+Verified: 42/42 tests passing, landing page generated + validated + saved locally,
+CFO output correctly grounded in CMO's market sizing, investor Q&A + rebuttal loop working.
+Fixed: missing beautifulsoup4 dependency in requirements files (added post-merge).
+Known non-blocking issue: CMO persona generation still returns empty fields when local
+Ollama LLM is unreachable (WinError 10061) — falls back silently, not yet investigated.
+
+## Update — persona-gen fix verified
+Confirmed working: Ollama down -> Groq fallback fires -> persona fields fully populated (tested by Yeshita).
+
+## New issue found — CFO funding_ask returns empty under Groq rate-limiting
+Same symptom as the persona bug: `funding_ask` in cfo_output came back all-empty during a 
+run that hit multiple Groq 429s (TPM limit 12000). Likely same root cause — a call inside 
+recommend_funding_ask silently failing without fallback/retry when rate-limited. Needs the 
+same fix pattern applied to persona-gen. Flagged to Lakshit.
+
+## Rate-limiting is now a real bottleneck
+Groq 429s are frequent enough (multiple per pipeline run) that they're both slowing runs 
+significantly (~50s+ retry overhead in one run) AND causing silent data-quality bugs when 
+retries aren't handled properly. Needs addressing before Wk9 hardening — options: reduce 
+LLM calls per node, add proactive rate-limit-aware backoff, or spread calls across the 
+pipeline more evenly instead of bursting them.
