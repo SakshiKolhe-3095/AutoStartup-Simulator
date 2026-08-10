@@ -54,3 +54,23 @@
   second LLM provider abstraction — CTO-agent doesn't need web search, so Tavily/web_search.py
   wasn't touched either
 - tests/test_cto_agent.py, tests/test_landing_page_gen.py, tests/test_deploy.py added
+
+## Week 6 status (Lakshit side)
+- Fixed graph.py: PR #20's merge conflict with upstream/main had been resolved via
+  GitHub's web UI leaving literal `<<<<<<<`/`=======`/`>>>>>>>` markers committed —
+  origin/main and upstream/main were both broken (SyntaxError on import) until this
+  branch fixed it. Flagged separately for a direct hotfix on main.
+- CFO-agent (backend/agents/cfo_agent.py): v1 done (Sakshi's slot was still unstarted) —
+  cost projection, revenue model options, unit economics, funding ask, all grounded in
+  CMO's market sizing and category-hinted like CTO's tech stack recommendations
+- backend/agents/schemas.py: added CFOOutput/CostProjection/RevenueModelOption/
+  UnitEconomics/FundingAsk, same conventions as CTOOutput
+- graph.py: cfo_stub replaced with real cfo_node; topology changed from a flat 3-way
+  parse_idea -> [cmo, cto, cfo] fan-out to parse_idea -> cmo -> [cto, cfo] — cfo genuinely
+  needs cmo's output, and this LangGraph version (0.2.60) double-fires a fan-in node when
+  its incoming branches have unequal depth (no `defer=True` support here), so cto is
+  routed through cmo too for scheduling symmetry, even though cto's node body still
+  doesn't touch cmo_output
+- tests/test_cfo_agent.py added; tests/test_orchestration.py updated to mock
+  WebSearchTool + cmo/cfo call_llm (previously only ceo_agent.call_llm was mocked, which
+  broke once cmo_stub/cfo_stub were replaced with real nodes) and to cover cfo_output
