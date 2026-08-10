@@ -1,5 +1,7 @@
 """Tests for CFOAgent"""
-from backend.agents.cfo_agent import CFOAgent
+import logging
+
+from backend.agents.cfo_agent import CFOAgent, _call_llm_with_retry
 
 
 def test_clean_json_strips_fences():
@@ -145,3 +147,59 @@ def test_cfo_node_defaults_missing_cmo_output_to_empty_dict(monkeypatch):
     monkeypatch.setattr("backend.agents.cfo_agent.CFOAgent.run", fake_run)
     cfo_node({"idea": "AI note-taking app"})
     assert captured["market_data"] == {}
+
+
+# --- retry-on-empty-response behavior (Groq 429/rate-limit hits llm_client.call_llm's
+# generic `except Exception: return ""`, so an empty string is the only failure signal
+# available here — same root cause as the persona-gen fix in cmo_agent.py) ---
+
+
+def test_call_llm_with_retry_retries_then_succeeds(monkeypatch):
+    monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
+    responses = iter(["", "", '{"ok": true}'])
+    call_count = {"n": 0}
+
+    def fake_call_llm(prompt, system, temperature=0.3):
+        call_count["n"] += 1
+        return next(responses)
+
+    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", fake_call_llm)
+    result = _call_llm_with_retry("prompt", "system", 0.3, context="test")
+    assert result == '{"ok": true}'
+    assert call_count["n"] == 3
+
+
+def test_call_llm_with_retry_logs_warning_on_persistent_rate_limit(monkeypatch, caplog):
+    """Simulates a Groq 429 that never clears — call_llm always returns "" — and
+    confirms the failure is visible in logs instead of silently returning blanks."""
+    monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: "")
+
+    with caplog.at_level(logging.WARNING):
+        result = _call_llm_with_retry("prompt", "system", 0.3, context="test_context")
+
+    assert result == ""
+    assert any("test_context" in r.message and "empty" in r.message for r in caplog.records)
+
+
+def test_recommend_funding_ask_logs_warning_instead_of_silently_returning_blanks(monkeypatch, caplog):
+    agent = CFOAgent()
+    monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: "")
+
+    with caplog.at_level(logging.WARNING):
+        result = agent.recommend_funding_ask("idea", "saas", {}, {})
+
+    assert result == {"amount": "", "use_of_funds": "", "reasoning": ""}
+    assert any("recommend_funding_ask" in r.message for r in caplog.records)
+
+
+def test_recommend_funding_ask_recovers_if_retry_succeeds(monkeypatch):
+    agent = CFOAgent()
+    monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
+    responses = iter(["", '{"amount": "$250k", "use_of_funds": "hiring", "reasoning": "runway"}'])
+    monkeypatch.setattr(
+        "backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: next(responses)
+    )
+    result = agent.recommend_funding_ask("idea", "saas", {}, {})
+    assert result["amount"] == "$250k"
