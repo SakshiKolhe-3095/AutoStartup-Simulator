@@ -5,13 +5,12 @@ Multi-agent AI system that takes a one-line startup idea and autonomously produc
 Built as a final-year resume project using fully free/local tooling (no paid APIs or cloud tiers).
 
 ## Team
-
 | Name | Role |
 |---|---|
 | Yeshita | Repo owner · Orchestration (LangGraph) · CEO-agent · Investor-agent |
-| Lakshit | CTO-agent (codegen + self-fix loop) · Deployment pipeline |
+| Lakshit | CTO-agent (codegen + self-fix loop) · CFO-agent · Deployment pipeline · `backend/api/` (streaming layer) |
 | Faiza | CMO-agent (market research, GTM, competitor scan) |
-| Sakshi | CFO-agent · Pitch-deck builder · Frontend UI · Tests · Docs |
+| Sakshi | Pitch-deck builder · Frontend UI · Tests · Docs |
 
 ## Architecture
 
@@ -35,8 +34,9 @@ autostartup-simulator/
 ├── backend/
 │   ├── agents/          # ceo, cmo, cto, cfo, investor
 │   ├── orchestration/   # LangGraph state machine
-│   ├── tools/           # web_search, codegen, deploy, deck_builder
-│   ├── models/          # local + Groq LLM client
+│   ├── api/              # streaming layer / demo UI backend (Lakshit)
+│   ├── tools/            # web_search, codegen, deploy, deck_builder
+│   ├── models/           # local + Groq LLM client
 │   └── utils/
 ├── frontend/             # Streamlit / React UI
 ├── data/                 # templates, sample ideas
@@ -90,7 +90,9 @@ See [Quick Reference commands](docs/architecture.md) for full git command list.
 
 ## Status
 
-🚧 Active development — Week 1 of 10.
+✅ Core pipeline complete — all agents (CEO/CMO/CTO/CFO/Investor) wired with real logic,
+42/42 tests passing. Landing page generation + local save working; real deploy (Vercel/
+Netlify) in progress. Pitch-deck builder and frontend UI still pending (Sakshi).
 
 ## License
 

@@ -9,9 +9,11 @@
 - score_pitch: scores 0-10 based on Q&A (stub — real LLM scoring pending Wk8)
 
 ## CMO-agent (Faiza) — backend/agents/cmo_agent.py
-- Status: skeleton + web_search integrated (Wk1). Full v1 in progress.
+- Status: done — market analysis (TAM/SAM/SOM), competitor scan, persona generation
+  (with Groq fallback when local Ollama is unreachable), GTM strategy. Wired into
+  graph.py as real `cmo_node`.
 
-## CFO-agent (Sakshi) — backend/agents/cfo_agent.py
+## CFO-agent (built by Lakshit, originally assigned to Sakshi) — backend/agents/cfo_agent.py
 - Status: v1 done (filled in by Lakshit since CTO-agent was already wired), wired into
   graph.py (real `cfo_node`, replaces `cfo_stub`).
 - project_costs(idea, category): development + operational cost estimate with reasoning
@@ -53,3 +55,14 @@
   answer_questions -> score_pitch -> END
   (cfo needs cmo's market sizing as input; cto routed through cmo too for LangGraph
   fan-in scheduling symmetry — see CFO-agent section above and graph.py comments)
+
+  ## Pitch-deck builder (Sakshi) — NOT YET BUILT
+- python-pptx dependency present but unused. Status: pending, timeline TBD.
+
+## backend/api/ (Lakshit)
+- Streaming layer / backend for 3D demo UI. Added outside original scope to unblock
+  demo work. Now formally assigned to Lakshit's row.
+
+## Deployment status
+- Currently local-only: HTML saved to data/landing_pages/, not hosted.
+- Real Vercel/Netlify deploy needed for demo — in progress (Lakshit).
