@@ -4,9 +4,14 @@ import IdeaForm from "./components/IdeaForm";
 function App() {
   const [result, setResult] = useState(null);
 
-  const handleGenerate = (idea) => {
-    // TODO Wk2 Day2: wire to backend /generate stub
-    setResult(`Received idea: ${idea}`);
+  const handleGenerate = async (idea) => {
+    const res = await fetch("http://localhost:8000/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea }),
+    });
+    const data = await res.json();
+    setResult(JSON.stringify(data));
   };
 
   return (
