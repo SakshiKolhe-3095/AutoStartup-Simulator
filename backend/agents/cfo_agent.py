@@ -3,6 +3,7 @@ CFO Agent - Cost Projection, Revenue Model & Unit Economics
 Owner: Lakshit (filling in for Sakshi's unstarted slot)
 """
 import json
+import time
 from typing import Any, Dict, List, Optional
 
 from backend.models.llm_client import call_llm
@@ -11,6 +12,28 @@ from backend.orchestration.state import AgentState
 from backend.tools.idea_classifier import classify_idea
 
 logger = get_logger(__name__)
+
+# Same root-cause fix as cmo_agent.py's generate_persona (Ollama-down -> falls back to
+# Groq): a failed LLM call must not silently resolve to blank-but-valid-looking fields.
+# CFO's functions only ever call Groq (no second provider like CMO's local Ollama to fall
+# back to), so the adaptation here is a bounded retry of the same call instead of a
+# provider swap — llm_client.call_llm() catches every exception generically and returns
+# "" (see its `except Exception`), so a 429/rate-limit can't be distinguished from any
+# other failure at this layer; an empty response is the only signal available.
+_RETRY_DELAYS_SECONDS = [1, 2]
+
+
+def _call_llm_with_retry(prompt: str, system: str, temperature: float, context: str) -> str:
+    raw = call_llm(prompt=prompt, system=system, temperature=temperature)
+    for delay in _RETRY_DELAYS_SECONDS:
+        if raw:
+            return raw
+        logger.warning(f"{context}: LLM call returned empty (possible Groq rate-limit) — retrying in {delay}s")
+        time.sleep(delay)
+        raw = call_llm(prompt=prompt, system=system, temperature=temperature)
+    if not raw:
+        logger.warning(f"{context}: LLM call still empty after retries")
+    return raw
 
 # Category-specific hints keep revenue-model prompts grounded to the 4 supported
 # categories instead of fully open-ended generation.
@@ -46,11 +69,12 @@ class CFOAgent:
             '{"development_cost": "...", "operational_cost": "...", "reasoning": "..."}'
         )
         prompt = f"Startup idea: {idea}\nCategory: {category}"
-        raw = call_llm(prompt=prompt, system=system, temperature=0.3)
+        raw = _call_llm_with_retry(prompt, system, 0.3, context="project_costs")
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
+            logger.warning(f"project_costs: failed to parse LLM response as JSON — returning blank fields. raw={raw!r}")
             return {"development_cost": "", "operational_cost": "", "reasoning": raw}
 
     def propose_revenue_models(self, idea: str, category: str) -> List[Dict[str, str]]:
@@ -62,12 +86,13 @@ class CFOAgent:
             '[{"model": "...", "description": "..."}]'
         )
         prompt = f"Startup idea: {idea}\nCategory: {category}\nGuidance: {hint}"
-        raw = call_llm(prompt=prompt, system=system, temperature=0.4)
+        raw = _call_llm_with_retry(prompt, system, 0.4, context="propose_revenue_models")
         raw = self._clean_json(raw)
         try:
             options = json.loads(raw)
             return options if isinstance(options, list) else []
         except (json.JSONDecodeError, TypeError):
+            logger.warning(f"propose_revenue_models: failed to parse LLM response as JSON — returning blank fields. raw={raw!r}")
             return [{"model": "parse_error", "description": raw}]
 
     def calculate_unit_economics(self, idea: str, category: str, market_data: Dict[str, Any]) -> Dict[str, str]:
@@ -82,11 +107,12 @@ class CFOAgent:
             f"Startup idea: {idea}\nCategory: {category}\n"
             f"Market sizing (from CMO): {json.dumps(market_data)}"
         )
-        raw = call_llm(prompt=prompt, system=system, temperature=0.3)
+        raw = _call_llm_with_retry(prompt, system, 0.3, context="calculate_unit_economics")
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
+            logger.warning(f"calculate_unit_economics: failed to parse LLM response as JSON — returning blank fields. raw={raw!r}")
             return {"cac": "", "ltv": "", "gross_margin": "", "reasoning": raw}
 
     def recommend_funding_ask(
@@ -108,11 +134,12 @@ class CFOAgent:
             f"Market sizing (from CMO): {json.dumps(market_data)}\n"
             f"Cost projection: {json.dumps(cost_projection)}"
         )
-        raw = call_llm(prompt=prompt, system=system, temperature=0.3)
+        raw = _call_llm_with_retry(prompt, system, 0.3, context="recommend_funding_ask")
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
+            logger.warning(f"recommend_funding_ask: failed to parse LLM response as JSON — returning blank fields. raw={raw!r}")
             return {"amount": "", "use_of_funds": "", "reasoning": raw}
 
     def run(self, idea: str, category: Optional[str] = None, market_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
