@@ -5,8 +5,8 @@ Owner: Lakshit (filling in for Sakshi's unstarted slot)
 import json
 import time
 from typing import Any, Dict, List, Optional
+from backend.models.llm_client import call_llm, FAST_MODEL
 
-from backend.models.llm_client import call_llm
 from backend.utils.logger import get_logger
 from backend.orchestration.state import AgentState
 from backend.tools.idea_classifier import classify_idea
@@ -23,14 +23,14 @@ logger = get_logger(__name__)
 _RETRY_DELAYS_SECONDS = [1, 2]
 
 
-def _call_llm_with_retry(prompt: str, system: str, temperature: float, context: str) -> str:
-    raw = call_llm(prompt=prompt, system=system, temperature=temperature)
+def _call_llm_with_retry(prompt: str, system: str, temperature: float, context: str, model: str = FAST_MODEL) -> str:
+    raw = call_llm(prompt=prompt, system=system, temperature=temperature, model=model)
     for delay in _RETRY_DELAYS_SECONDS:
         if raw:
             return raw
         logger.warning(f"{context}: LLM call returned empty (possible Groq rate-limit) — retrying in {delay}s")
         time.sleep(delay)
-        raw = call_llm(prompt=prompt, system=system, temperature=temperature)
+        raw = call_llm(prompt=prompt, system=system, temperature=temperature, model=model)
     if not raw:
         logger.warning(f"{context}: LLM call still empty after retries")
     return raw
@@ -46,6 +46,10 @@ REVENUE_MODEL_HINTS = {
     "consumer": "typical options: one-time purchase, subscription/replenishment box, "
                 "bundle upsells",
 }
+
+# Appended to every system prompt below — keeps JSON responses short enough to never
+# get truncated by max_tokens, and reduces token spend per call (Groq free-tier TPM/TPD).
+_CONCISE_SUFFIX = " Keep the JSON compact — 1-2 short sentences per field, no long paragraphs."
 
 
 class CFOAgent:
@@ -67,6 +71,7 @@ class CFOAgent:
             "You are a startup CFO estimating lean MVP costs on free-tier/bootstrapped "
             "infrastructure. Respond ONLY as JSON: "
             '{"development_cost": "...", "operational_cost": "...", "reasoning": "..."}'
+            + _CONCISE_SUFFIX
         )
         prompt = f"Startup idea: {idea}\nCategory: {category}"
         raw = _call_llm_with_retry(prompt, system, 0.3, context="project_costs")
@@ -84,6 +89,7 @@ class CFOAgent:
             "You are a startup CFO proposing revenue models. Given a startup idea and "
             "category, propose 2-3 viable revenue models. Respond ONLY as JSON: "
             '[{"model": "...", "description": "..."}]'
+            + _CONCISE_SUFFIX
         )
         prompt = f"Startup idea: {idea}\nCategory: {category}\nGuidance: {hint}"
         raw = _call_llm_with_retry(prompt, system, 0.4, context="propose_revenue_models")
@@ -102,6 +108,7 @@ class CFOAgent:
             "labeled estimates, not precise figures — ground them in the market data given "
             "and explain your reasoning briefly. Respond ONLY as JSON: "
             '{"cac": "...", "ltv": "...", "gross_margin": "...", "reasoning": "..."}'
+            + _CONCISE_SUFFIX
         )
         prompt = (
             f"Startup idea: {idea}\nCategory: {category}\n"
@@ -128,6 +135,7 @@ class CFOAgent:
             "cost projection and market size given, with brief reasoning — no bare numbers "
             "without justification. Respond ONLY as JSON: "
             '{"amount": "...", "use_of_funds": "...", "reasoning": "..."}'
+            + _CONCISE_SUFFIX
         )
         prompt = (
             f"Startup idea: {idea}\nCategory: {category}\n"
