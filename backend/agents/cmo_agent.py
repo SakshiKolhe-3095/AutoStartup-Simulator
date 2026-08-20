@@ -4,9 +4,10 @@ Owner: Faiza
 """
 import json
 import ollama
-from backend.models.llm_client import call_llm
+from backend.models.llm_client import call_llm, FAST_MODEL
 from backend.utils.logger import get_logger
 from backend.config import GROQ_MODEL, OLLAMA_MODEL
+
 
 logger = get_logger(__name__)
 
@@ -24,12 +25,9 @@ class CMOAgent:
             raw = raw.rsplit("```", 1)[0]
         return raw.strip()
 
-    
-
     def _call_local_llm(self, prompt: str, system: str) -> str:
         try:
             response = ollama.chat(
-                
                 model=OLLAMA_MODEL,
                 messages=[
                     {"role": "system", "content": system},
@@ -49,14 +47,12 @@ class CMOAgent:
             "Respond ONLY as JSON: {\"tam\": \"...\", \"sam\": \"...\", "
             "\"som\": \"...\", \"reasoning\": \"...\"}"
         )
-        raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.3)
+        raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.3, model=FAST_MODEL)
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
             return {"tam": "", "sam": "", "som": "", "reasoning": raw}
-
-
 
     def scan_competitors(self, idea: str) -> list:
         """Search and summarize competitor landscape."""
@@ -71,9 +67,11 @@ class CMOAgent:
             "You are a market analyst. Extract EVERY distinct competitor "
             "mentioned in the text below — do not limit yourself to one. "
             "Respond ONLY as a JSON list, no other text.\n"
-            "Format: [{\"name\": \"...\", \"summary\": \"...\"}]"
+            "Format: [{\"name\": \"...\", \"summary\": \"...\"}]\n"
+            "Keep each summary to one short sentence — the list may be long, "
+            "so brevity per item matters more than detail."
         )
-        raw = call_llm(prompt=raw_context, system=system, temperature=0.3)
+        raw = call_llm(prompt=raw_context, system=system, temperature=0.3, model=FAST_MODEL)
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
@@ -88,11 +86,10 @@ class CMOAgent:
             "{\"name\": \"...\", \"age_range\": \"...\", \"occupation\": \"...\", "
             "\"pain_points\": [\"...\"], \"motivations\": [\"...\"]}"
         )
-        # raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.5)
         raw = self._call_local_llm(prompt=f"Startup idea: {idea}", system=system)
         if not raw:
             logger.warning("Local LLM unavailable, falling back to Groq for persona generation")
-            raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.5)
+            raw = call_llm(prompt=f"Startup idea: {idea}", system=system, temperature=0.5, model=FAST_MODEL)
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
@@ -109,7 +106,7 @@ class CMOAgent:
         )
         prompt = f"Idea: {idea}\nMarket data: {json.dumps(market_data)}"
         return call_llm(prompt=prompt, system=system, temperature=0.6)
-    
+
     def run(self, idea: str) -> dict:
         """Main entrypoint — orchestrates full CMO analysis."""
         market = self.analyze_market(idea)
