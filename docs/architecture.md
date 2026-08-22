@@ -148,3 +148,15 @@ gpt-oss-20b reliably returned empty completions for the competitor-extraction pr
 returned "" every time). Switched scan_competitors back to QUALITY_MODEL. Not yet
 verified end-to-end in a real pipeline run due to same-day quota exhaustion — needs
 fresh-quota confirmation.
+
+
+## Week 8 COMPLETE — Investor loop polish (Yeshita)
+- score_pitch rewritten: LLM-based quality scoring (was previously always 10/10, 
+  just counting answered questions) — found during Wk9 batch testing.
+- Question bank expanded from ~20 to ~40 questions across all categories.
+- Rebuttal loop upgraded from single shared pool of 2 to per-question (up to 2 
+  rounds/question, 4 total cap for demo-time safety).
+- Two mock-shadowing bugs fixed along the way (generate_rebuttal local import, 
+  score_pitch's own call_llm import) — same recurring pattern, now fixed here too.
+Not yet verified with a real end-to-end run (Groq daily quota exhausted today) — 
+needs fresh-quota confirmation tomorrow, same as prior fixes.
