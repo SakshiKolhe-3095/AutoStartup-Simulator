@@ -4,10 +4,15 @@ Owner: Sakshi
 """
 from pptx import Presentation
 from pptx.util import Pt
-
+from pptx.dml.color import RGBColor
+from backend.tools.screenshot import screenshot_landing_page
 
 TITLE_FONT_SIZE = Pt(32)
 BODY_FONT_SIZE = Pt(18)
+
+ACCENT_COLOR = RGBColor(0x2E, 0x7D, 0x32)      # dark green — matches frontend accent
+TITLE_TEXT_COLOR = RGBColor(0x1B, 0x1B, 0x1B)  # near-black
+BODY_TEXT_COLOR = RGBColor(0x33, 0x33, 0x33)
 
 
 class DeckBuilder:
@@ -25,7 +30,7 @@ class DeckBuilder:
 
     @staticmethod
     def _set_body_text(slide, lines: list):
-        """Write a list of lines into the body placeholder with consistent font sizing."""
+        """Write a list of lines into the body placeholder with consistent styling."""
         body = slide.placeholders[1].text_frame
         body.clear()
         for i, line in enumerate(lines):
@@ -33,11 +38,15 @@ class DeckBuilder:
             p.text = line
             for run in p.runs:
                 run.font.size = BODY_FONT_SIZE
+                run.font.color.rgb = BODY_TEXT_COLOR
 
     def _add_slide(self, prs, title: str, lines: list):
         slide = prs.slides.add_slide(prs.slide_layouts[1])
         slide.shapes.title.text = title
-        slide.shapes.title.text_frame.paragraphs[0].runs[0].font.size = TITLE_FONT_SIZE
+        title_run = slide.shapes.title.text_frame.paragraphs[0].runs[0]
+        title_run.font.size = TITLE_FONT_SIZE
+        title_run.font.bold = True
+        title_run.font.color.rgb = ACCENT_COLOR
         self._set_body_text(slide, lines)
         return slide
 
@@ -53,10 +62,20 @@ class DeckBuilder:
         cfo = ceo_output.get("cfo_output", {}) or {}
         cto = ceo_output.get("cto_output", {}) or {}
 
-        # Slide 1: Title
+        # Slide 1: Title — accent color, bold headline
         slide = prs.slides.add_slide(prs.slide_layouts[0])
-        slide.shapes.title.text = idea
-        slide.placeholders[1].text = "AutoStartup Simulator — Pitch Deck"
+        title_shape = slide.shapes.title
+        title_shape.text = idea
+        title_run = title_shape.text_frame.paragraphs[0].runs[0]
+        title_run.font.size = Pt(40)
+        title_run.font.bold = True
+        title_run.font.color.rgb = ACCENT_COLOR
+
+        subtitle = slide.placeholders[1]
+        subtitle.text = "AutoStartup Simulator — Pitch Deck"
+        subtitle_run = subtitle.text_frame.paragraphs[0].runs[0]
+        subtitle_run.font.color.rgb = BODY_TEXT_COLOR
+        subtitle_run.font.italic = True
 
         # Slide 2: Pitch narrative
         self._add_slide(prs, "The Pitch", self._narrative_to_bullets(narrative))
@@ -69,7 +88,7 @@ class DeckBuilder:
             f"SOM: {market.get('som', 'N/A')}",
         ])
 
-        # Slide 4: Competitors (from CMO) — new
+        # Slide 4: Competitors (from CMO)
         competitors = cmo.get("competitors", [])
         if competitors:
             lines = [f"{c.get('name', 'Unknown')}: {c.get('summary', '')}" for c in competitors[:5]]
@@ -77,7 +96,7 @@ class DeckBuilder:
             lines = ["No competitor data available."]
         self._add_slide(prs, "Competitive Landscape", lines)
 
-        # Slide 5: Product / Tech Stack (from CTO) — new, fills prior gap
+        # Slide 5: Product / Tech Stack (from CTO)
         mvp_features = cto.get("mvp_features", [])
         tech_stack = cto.get("tech_stack", {})
         product_lines = []
@@ -93,6 +112,21 @@ class DeckBuilder:
         if not product_lines:
             product_lines = ["Product details not available."]
         self._add_slide(prs, "Product & Tech", product_lines)
+
+	        # Slide 5.5: Landing Page Screenshot (from CTO's landing_page_path)
+        landing_page_path = cto.get("landing_page_path")
+        if landing_page_path:
+            screenshot_path = f"{output_path}_landing_screenshot.png"
+            result = screenshot_landing_page(landing_page_path, screenshot_path)
+            if result:
+                slide = prs.slides.add_slide(prs.slide_layouts[5])  # blank/title-only layout
+                slide.shapes.title.text = "Landing Page Preview"
+                title_run = slide.shapes.title.text_frame.paragraphs[0].runs[0]
+                title_run.font.size = TITLE_FONT_SIZE
+                title_run.font.bold = True
+                title_run.font.color.rgb = ACCENT_COLOR
+                from pptx.util import Inches
+                slide.shapes.add_picture(result, Inches(1), Inches(1.5), width=Inches(8))
 
         # Slide 6: Financials (from CFO)
         funding = cfo.get("funding_ask", {})
