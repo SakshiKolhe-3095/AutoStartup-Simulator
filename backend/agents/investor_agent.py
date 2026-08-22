@@ -6,6 +6,7 @@ from backend.orchestration.state import AgentState
 from backend.models.llm_client import call_llm
 from backend.tools.idea_classifier import classify_idea
 
+
 QUESTION_BANK_PATH = Path("data/question_bank.json")
 
 
@@ -31,13 +32,31 @@ def select_questions(state: AgentState, n: int = 5) -> dict:
     return {"investor_questions": questions[:n], "investor_transcript": [], "idea_category": idea_category}
 
 def score_pitch(state: AgentState) -> dict:
-    """Stub scorer — replaced with LLM-based scoring in Week 8. Also marks pipeline complete."""
+    """LLM-based scoring — evaluates actual answer quality, not just completion count."""
     if state.get("status") == "failed":
-        return {}   # don't overwrite failure status
+        return {}
+
     transcript = state.get("investor_transcript", [])
-    answered = sum(1 for t in transcript if t.get("a"))
-    total = max(len(state.get("investor_questions", [])), 1)
-    score = round((answered / total) * 10)
+    if not transcript:
+        return {"investor_score": 0, "status": "done"}
+
+    qa_summary = "\n".join(
+        f"Q: {t['q']}\nA: {t.get('a', 'No answer')}" +
+        (f"\nRebuttal: {t['rebuttal']}\nDefense: {t['defense']}" if 'rebuttal' in t else "")
+        for t in transcript
+    )
+    prompt = (
+        f"Investor Q&A transcript:\n{qa_summary}\n\n"
+        "Score this pitch 0-10 based on: specificity of answers, whether numbers/claims "
+        "are backed by evidence, and how well rebuttals were defended. Respond with ONLY "
+        "a single integer 0-10, no other text."
+    )
+    raw = call_llm(prompt=prompt, system="You are a skeptical VC scoring pitch quality.", temperature=0.2)
+    try:
+        score = int(raw.strip())
+        score = max(0, min(10, score))
+    except (ValueError, TypeError):
+        score = 5
     return {"investor_score": score, "status": "done"}
 
 def generate_rebuttal(question: str, ceo_answer: str) -> str:
