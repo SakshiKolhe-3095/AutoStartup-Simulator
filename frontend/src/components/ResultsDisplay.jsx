@@ -1,16 +1,16 @@
+import InvestorScore from "./InvestorScore";
+
 export default function ResultsDisplay({ result }) {
   if (!result) return null;
-
   const {
     deck_url,
     landing_page_url,
     investor_transcript = [],
+    investor_score,
   } = result;
-
   return (
-      <div className="results-display">
+    <div className="results-display">
       <h2>Results</h2>
-
       <div style={{ marginBottom: "1rem" }}>
         {deck_url ? (
           <a href={deck_url} target="_blank" rel="noreferrer">
@@ -20,7 +20,6 @@ export default function ResultsDisplay({ result }) {
           <p>Pitch deck not yet available.</p>
         )}
       </div>
-
       <div style={{ marginBottom: "1rem" }}>
         {landing_page_url ? (
           <a href={landing_page_url} target="_blank" rel="noreferrer">
@@ -30,7 +29,7 @@ export default function ResultsDisplay({ result }) {
           <p>Landing page not yet available.</p>
         )}
       </div>
-
+      <InvestorScore score={investor_score} />
       <div>
         <h3>Investor Q&A</h3>
         {investor_transcript.length === 0 && <p>No transcript yet.</p>}
