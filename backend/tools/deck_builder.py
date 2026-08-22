@@ -9,6 +9,15 @@ from pptx.util import Inches, Pt
 class DeckBuilder:
     def __init__(self, template_path: str = None):
         self.template_path = template_path
+    
+    @staticmethod
+    def _narrative_to_bullets(narrative: str) -> list:
+        """Split a narrative paragraph into clean sentence-level bullets."""
+        if not narrative:
+            return ["Narrative not available."]
+        raw_sentences = narrative.replace("\n", " ").split(". ")
+        bullets = [s.strip().rstrip(".") + "." for s in raw_sentences if s.strip()]
+        return bullets or ["Narrative not available."]
 
     def build_deck(self, ceo_output: dict, output_path: str = "output_deck.pptx"):
         """
@@ -27,10 +36,15 @@ class DeckBuilder:
         slide.shapes.title.text = idea
         slide.placeholders[1].text = "AutoStartup Simulator — Pitch Deck"
 
-        # Slide 2: Pitch narrative
+        # Slide 2: Pitch narrative — split into sentence-level bullets
         slide = prs.slides.add_slide(prs.slide_layouts[1])
         slide.shapes.title.text = "The Pitch"
-        slide.placeholders[1].text = narrative or "Narrative not available."
+        body = slide.placeholders[1].text_frame
+        body.clear()
+        sentences = self._narrative_to_bullets(narrative)
+        for i, sentence in enumerate(sentences):
+            p = body.paragraphs[0] if i == 0 else body.add_paragraph()
+            p.text = sentence
 
         # Slide 3: Market (from CMO)
         market = cmo.get("market", {})
