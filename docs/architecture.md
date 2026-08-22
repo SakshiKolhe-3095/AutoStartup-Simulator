@@ -134,3 +134,17 @@ Note: investor_score returned 10/10 on every single idea — current score_pitch
 scores based on "questions answered" not answer quality, so this may need revisiting
 in Week 8 investor-loop polish to be a meaningful signal for the demo.
 Week 9 hardening goal: COMPLETE.
+
+
+## Known daily-quota pattern
+Groq's 200k/day limit for gpt-oss-120b gets exhausted after ~6-8 full pipeline runs
+in a testing session (confirmed Aug 20 and Aug 22). Real-world verification of any
+fix needs to happen either early in a session or on a fresh day — pytest (mocked)
+remains reliable regardless of quota state.
+
+## Fixed — scan_competitors empty response on FAST_MODEL
+gpt-oss-20b reliably returned empty completions for the competitor-extraction prompt
+(confirmed via isolated debug script — QUALITY_MODEL returned valid JSON, FAST_MODEL
+returned "" every time). Switched scan_competitors back to QUALITY_MODEL. Not yet
+verified end-to-end in a real pipeline run due to same-day quota exhaustion — needs
+fresh-quota confirmation.
