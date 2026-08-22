@@ -64,20 +64,21 @@ async def generate(req: IdeaRequest):
 
 
 async def real_log_stream(idea: str):
-    """Streams coarse-grained progress markers while the real pipeline runs in a thread.
-    True per-node log streaming would need LangGraph's astream — out of scope for Wk7 Day1,
-    tracked as a follow-up."""
+    """Streams coarse-grained progress markers.
+    NOTE: still time-based, not tied to actual pipeline node completion (real fix needs
+    LangGraph astream — tracked as follow-up). Padded to roughly match real pipeline
+    duration (~45s) so 'Done.' doesn't appear before /generate actually finishes."""
     steps = [
         f"Parsing idea: {idea}",
         "CMO agent: analyzing market...",
         "CFO/CTO agents: running in parallel...",
         "CEO agent: synthesizing pitch...",
         "Investor Q&A round...",
+        "Finalizing results...",
     ]
-    for step in steps[:-1]:
+    for step in steps:
         yield f"data: {step}\n\n"
-        await asyncio.sleep(1.5)
-    yield f"data: {steps[-1]}\n\n"
+        await asyncio.sleep(7)
     yield "data: Done.\n\n"
 
 
