@@ -42,12 +42,17 @@ def defend_rebuttal(question: str, original_answer: str, rebuttal: str, narrativ
     return call_llm(prompt, system="You are the CEO, holding your ground under investor scrutiny.").strip()
 
 def answer_investor_questions(state: AgentState) -> dict:
+    
+
     questions = state.get("investor_questions", [])[:5]
     narrative = state.get("ceo_narrative", "")
     transcript = []
-    MAX_REBUTTALS = 2
 
-    rebuttal_count = 0
+    MAX_ROUNDS_PER_QUESTION = 2   # rebuttal->defense, up to twice per question
+    MAX_TOTAL_ROUNDS = 4          # global safety cap so demo runtime stays bounded
+
+    total_rounds_used = 0
+
     for q in questions:
         prompt = (
             f"Startup narrative: {narrative}\n\n"
@@ -55,15 +60,29 @@ def answer_investor_questions(state: AgentState) -> dict:
             "Answer as the CEO — confident, specific, 2-3 sentences max."
         )
         answer = call_llm(prompt, system="You are the CEO defending your startup pitch to a skeptical investor.")
-        entry = {"q": q, "a": answer or "No answer generated."}
+        entry = {"q": q, "a": answer or "No answer generated.", "rounds": []}
 
-        if rebuttal_count < MAX_REBUTTALS:
-            rebuttal = generate_rebuttal(q, answer)
-            if rebuttal and rebuttal != "NO_REBUTTAL":          # <-- key line: only add if NOT "NO_REBUTTAL"
-                defense = defend_rebuttal(q, answer, rebuttal, narrative)
-                entry["rebuttal"] = rebuttal
-                entry["defense"] = defense
-                rebuttal_count += 1
+        current_answer = answer
+        rounds_this_question = 0
+
+        while rounds_this_question < MAX_ROUNDS_PER_QUESTION and total_rounds_used < MAX_TOTAL_ROUNDS:
+            rebuttal = generate_rebuttal(q, current_answer)
+            if not rebuttal or rebuttal == "NO_REBUTTAL":
+                break
+
+            defense = defend_rebuttal(q, current_answer, rebuttal, narrative)
+            entry["rounds"].append({"rebuttal": rebuttal, "defense": defense})
+
+            current_answer = defense
+            rounds_this_question += 1
+            total_rounds_used += 1
+
+        # Keep backward-compatible top-level fields for the FIRST round only,
+        # so any existing code/tests reading entry["rebuttal"]/entry["defense"]
+        # still work; entry["rounds"] holds the full multi-round history.
+        if entry["rounds"]:
+            entry["rebuttal"] = entry["rounds"][0]["rebuttal"]
+            entry["defense"] = entry["rounds"][0]["defense"]
 
         transcript.append(entry)
 
