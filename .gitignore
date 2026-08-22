@@ -27,3 +27,5 @@ node_modules/
 
 # generated landing pages (per-run output, not source)
 data/landing_pages/
+dist/
+output_deck.pptx
