@@ -173,6 +173,26 @@ class CFOAgent:
             "funding_ask": funding_ask,
         }
 
+    def revenue_model_options(self, idea: str) -> list:
+        """
+        Skeleton: returns candidate revenue models for the idea.
+        TODO: refine with LLM call.
+        """
+        return ["subscription", "freemium", "one-time purchase", "ads"]
+
+    def unit_economics(self, revenue_per_user: float, cost_per_user: float) -> dict:
+        """
+        Skeleton: basic unit economics calc.
+        """
+        margin = revenue_per_user - cost_per_user
+        margin_pct = (margin / revenue_per_user * 100) if revenue_per_user else 0
+        return {
+            "revenue_per_user": revenue_per_user,
+            "cost_per_user": cost_per_user,
+            "margin": margin,
+            "margin_pct": round(margin_pct, 2),
+        }
+
 
 def cfo_node(state: AgentState) -> dict:
     """LangGraph node — replaces graph.py's cfo_stub with the real CFO-agent."""

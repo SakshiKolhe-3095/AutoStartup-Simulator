@@ -1,0 +1,75 @@
+
+/* --- AutoStartup Simulator custom styles (Wk6 polish) --- */
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.idea-form input {
+  padding: 0.6rem 1rem;
+  width: 320px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #eaeaea;
+  font-size: 1rem;
+}
+
+.idea-form input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.idea-form input:disabled {
+  opacity: 0.6;
+}
+
+.idea-form button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  background: #4caf50;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  transition: background 0.2s;
+}
+
+.idea-form button:hover:not(:disabled) {
+  background: #43a047;
+}
+
+.idea-form button:disabled {
+  background: #333;
+  cursor: not-allowed;
+}
+
+.live-log {
+  font-family: "Courier New", monospace;
+  background: #111;
+  color: #0f0;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.results-display {
+  margin-top: 1.5rem;
+  text-align: left;
+  background: #161616;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.results-display a {
+  color: #4caf50;
+  text-decoration: none;
+}
+
+.results-display a:hover {
+  text-decoration: underline;
+}
