@@ -123,3 +123,14 @@ demo practice? Switch some agents to local Ollama entirely to reduce Groq load?
   on this machine (WinError 10061), falls back to Groq correctly.
 - STILL TO DO: run scripts/batch_test.py end-to-end tomorrow with fresh quota to 
   confirm real-world fix; review results for any remaining parse/truncation issues.
+
+
+  ## Week 9 COMPLETE — Batch hardening results (10/10 success)
+Ran scripts/batch_test.py against 10 diverse ideas with fresh Groq quota (Aug 22).
+Result: 10/10 succeeded, 0 errors, 0 crashes. Avg runtime ~95s/idea (range 60-112s).
+Confirms all Aug 20 fixes (model migration, max_tokens, cmo_agent prompt fix, node-level
+error handling) work correctly end-to-end under real conditions.
+Note: investor_score returned 10/10 on every single idea — current score_pitch logic
+scores based on "questions answered" not answer quality, so this may need revisiting
+in Week 8 investor-loop polish to be a meaningful signal for the demo.
+Week 9 hardening goal: COMPLETE.
