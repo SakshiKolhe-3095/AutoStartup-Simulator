@@ -71,7 +71,11 @@ class CMOAgent:
             "Keep each summary to one short sentence — the list may be long, "
             "so brevity per item matters more than detail."
         )
-        raw = call_llm(prompt=raw_context, system=system, temperature=0.3, model=FAST_MODEL)
+        # NOTE: FAST_MODEL (gpt-oss-20b) reliably returns empty responses for this
+        # long-list extraction prompt — confirmed via isolated testing. Use the
+        # default QUALITY_MODEL here; this call only fires once per pipeline run
+        # so the token cost difference is negligible.
+        raw = call_llm(prompt=raw_context, system=system, temperature=0.3)
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
