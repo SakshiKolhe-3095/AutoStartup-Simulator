@@ -8,7 +8,7 @@ export default function ResultsDisplay({ result }) {
   } = result;
 
   return (
-    <div style={{ padding: "1rem", marginTop: "1rem" }}>
+      <div className="results-display">
       <h2>Results</h2>
 
       <div style={{ marginBottom: "1rem" }}>

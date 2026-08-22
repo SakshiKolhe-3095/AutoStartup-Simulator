@@ -20,7 +20,7 @@ export default function LiveLog({ idea }) {
   if (!idea) return null;
 
   return (
-    <div style={{ fontFamily: "monospace", background: "#111", color: "#0f0", padding: "1rem" }}>
+      <div className="live-log">
       {logs.map((log, i) => (
         <div key={i}>{log}</div>
       ))}
