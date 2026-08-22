@@ -22,7 +22,7 @@ def test_project_costs_returns_dict_keys(monkeypatch):
     agent = CFOAgent()
     monkeypatch.setattr(
         "backend.agents.cfo_agent.call_llm",
-        lambda prompt, system, temperature=0.3: (
+        lambda prompt, system, temperature=0.3, model=None: (
             '{"development_cost": "$15k", "operational_cost": "$500/mo", "reasoning": "lean MVP"}'
         ),
     )
@@ -33,7 +33,7 @@ def test_project_costs_returns_dict_keys(monkeypatch):
 def test_project_costs_handles_bad_json(monkeypatch):
     agent = CFOAgent()
     monkeypatch.setattr(
-        "backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: "not json"
+        "backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3, model=None: "not json"
     )
     result = agent.project_costs("AI note-taking app", "saas")
     assert result["reasoning"] == "not json"
@@ -43,7 +43,7 @@ def test_propose_revenue_models_returns_list(monkeypatch):
     agent = CFOAgent()
     monkeypatch.setattr(
         "backend.agents.cfo_agent.call_llm",
-        lambda prompt, system, temperature=0.4: (
+        lambda prompt, system, temperature=0.4, model=None: (
             '[{"model": "subscription", "description": "monthly tiers"}, '
             '{"model": "freemium", "description": "free tier + paid upgrade"}]'
         ),
@@ -57,7 +57,7 @@ def test_calculate_unit_economics_returns_dict_keys(monkeypatch):
     agent = CFOAgent()
     monkeypatch.setattr(
         "backend.agents.cfo_agent.call_llm",
-        lambda prompt, system, temperature=0.3: (
+        lambda prompt, system, temperature=0.3, model=None: (
             '{"cac": "$40", "ltv": "$300", "gross_margin": "70%", "reasoning": "based on TAM"}'
         ),
     )
@@ -71,7 +71,7 @@ def test_recommend_funding_ask_returns_dict_keys(monkeypatch):
     agent = CFOAgent()
     monkeypatch.setattr(
         "backend.agents.cfo_agent.call_llm",
-        lambda prompt, system, temperature=0.3: (
+        lambda prompt, system, temperature=0.3, model=None: (
             '{"amount": "$250k", "use_of_funds": "hiring + infra", "reasoning": "12mo runway"}'
         ),
     )
@@ -115,7 +115,7 @@ def test_run_produces_full_output(monkeypatch):
 
 def test_run_defaults_market_data_to_empty_dict(monkeypatch):
     agent = CFOAgent()
-    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: "{}")
+    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3, model=None: "{}")
     result = agent.run("AI note-taking app", category="saas")
     assert result["category"] == "saas"
 
@@ -159,7 +159,7 @@ def test_call_llm_with_retry_retries_then_succeeds(monkeypatch):
     responses = iter(["", "", '{"ok": true}'])
     call_count = {"n": 0}
 
-    def fake_call_llm(prompt, system, temperature=0.3):
+    def fake_call_llm(prompt, system, temperature=0.3, model=None):
         call_count["n"] += 1
         return next(responses)
 
@@ -173,7 +173,7 @@ def test_call_llm_with_retry_logs_warning_on_persistent_rate_limit(monkeypatch, 
     """Simulates a Groq 429 that never clears — call_llm always returns "" — and
     confirms the failure is visible in logs instead of silently returning blanks."""
     monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
-    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: "")
+    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3, model=None: "")
 
     with caplog.at_level(logging.WARNING):
         result = _call_llm_with_retry("prompt", "system", 0.3, context="test_context")
@@ -185,7 +185,7 @@ def test_call_llm_with_retry_logs_warning_on_persistent_rate_limit(monkeypatch, 
 def test_recommend_funding_ask_logs_warning_instead_of_silently_returning_blanks(monkeypatch, caplog):
     agent = CFOAgent()
     monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
-    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: "")
+    monkeypatch.setattr("backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3, model=None: "")
 
     with caplog.at_level(logging.WARNING):
         result = agent.recommend_funding_ask("idea", "saas", {}, {})
@@ -199,7 +199,7 @@ def test_recommend_funding_ask_recovers_if_retry_succeeds(monkeypatch):
     monkeypatch.setattr("backend.agents.cfo_agent.time.sleep", lambda seconds: None)
     responses = iter(["", '{"amount": "$250k", "use_of_funds": "hiring", "reasoning": "runway"}'])
     monkeypatch.setattr(
-        "backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3: next(responses)
+        "backend.agents.cfo_agent.call_llm", lambda prompt, system, temperature=0.3, model=None: next(responses)
     )
     result = agent.recommend_funding_ask("idea", "saas", {}, {})
     assert result["amount"] == "$250k"

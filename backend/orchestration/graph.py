@@ -8,7 +8,18 @@ from backend.agents.cfo_agent import cfo_node
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
+def _safe_node(node_name: str, node_fn, output_key: str, default_output: dict):
+    """Wrap a node function so an unhandled exception doesn't crash the whole pipeline.
+    On failure: logs it, records it in state['errors'], and returns a safe default so
+    downstream nodes (synthesize, investor) still have something to work with."""
+    def wrapped(state: AgentState) -> dict:
+        try:
+            return node_fn(state)
+        except Exception as e:
+            logger.error(f"{node_name} node failed: {e}", exc_info=True)
+            errors = state.get("errors", []) + [f"{node_name} failed: {str(e)}"]
+            return {output_key: default_output, "errors": errors}
+    return wrapped
 
 def cmo_node(state: AgentState) -> dict:
     from backend.agents.cmo_agent import CMOAgent
@@ -27,9 +38,20 @@ def build_graph():
     graph = StateGraph(AgentState)
 
     graph.add_node("parse_idea", parse_idea)
-    graph.add_node("cmo", cmo_node)
-    graph.add_node("cto", cto_node)
-    graph.add_node("cfo", cfo_node)
+    graph.add_node("cmo", _safe_node(
+        "cmo", cmo_node, "cmo_output",
+        {"market": {}, "competitors": [], "persona": {}, "gtm_strategy": ""}
+    ))
+    graph.add_node("cto", _safe_node(
+        "cto", cto_node, "cto_output",
+        {"category": "", "mvp_features": [], "tech_stack": {}, "architecture_summary": "",
+         "landing_page_html": "", "landing_page_path": None, "code_repo": None}
+    ))
+    graph.add_node("cfo", _safe_node(
+        "cfo", cfo_node, "cfo_output",
+        {"category": "", "cost_projection": {}, "revenue_model_options": [],
+         "unit_economics": {}, "funding_ask": {}}
+    ))
     graph.add_node("synthesize", synthesize)
     graph.add_node("select_questions", select_questions)
     graph.add_node("answer_questions", answer_investor_questions)

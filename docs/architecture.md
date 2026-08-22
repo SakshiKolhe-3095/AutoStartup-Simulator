@@ -99,3 +99,27 @@ significantly (~50s+ retry overhead in one run) AND causing silent data-quality 
 retries aren't handled properly. Needs addressing before Wk9 hardening — options: reduce 
 LLM calls per node, add proactive rate-limit-aware backoff, or spread calls across the 
 pipeline more evenly instead of bursting them.
+
+
+## CRITICAL — Groq free-tier daily token limit (100k TPD) is a real demo risk
+Batch testing hit Groq's DAILY limit after ~2 full pipeline runs (~19:50, Aug 13). 
+Subsequent calls failed with waits up to 15+ minutes. This means:
+- Cannot run the pipeline more than ~5-8 times/day on this API key
+- Live demo day is at risk if multiple practice runs happen before the actual demo
+- Batch/stress testing at scale is not feasible on free tier as currently built
+Needs a team decision: multiple Groq API keys rotated? Cache/mock mode for repeated 
+demo practice? Switch some agents to local Ollama entirely to reduce Groq load?
+
+## Week 9 — Model migration + token/quota hardening (Yeshita)
+- Discovered Groq deprecated llama-3.3-70b-versatile / llama-3.1-8b-instant (404s on 
+  fresh accounts). Migrated to openai/gpt-oss-120b (quality) and openai/gpt-oss-20b 
+  (fast, structured calls) in llm_client.py.
+- New daily quota: 200k tokens/day (vs old 100k) — real capacity improvement.
+- Found & fixed: max_tokens=512 truncated JSON mid-response on new models — reverted 
+  to 1024, added concise-response instructions to CFO/CMO system prompts instead.
+- Batch hardening script added (scripts/batch_test.py) — 10 diverse ideas, not yet 
+  run to completion on fresh quota (blocked by exhausted daily limit during testing).
+- Known non-blocking issue carried over: CMO local Ollama call still fails silently 
+  on this machine (WinError 10061), falls back to Groq correctly.
+- STILL TO DO: run scripts/batch_test.py end-to-end tomorrow with fresh quota to 
+  confirm real-world fix; review results for any remaining parse/truncation issues.

@@ -118,3 +118,14 @@ def test_cfo_output_reflects_cmo_market_sizing(mock_ceo_llm, mock_cfo_llm, mock_
 
     assert result["cmo_output"]["market"]["tam"] == "$1B"
     assert result["cfo_output"] is not None
+
+@patch("backend.agents.ceo_agent.call_llm", return_value="Mocked pitch narrative.")
+@patch("backend.orchestration.graph.cmo_node")
+def test_cmo_node_failure_does_not_crash_pipeline(mock_cmo_node, mock_llm):
+    mock_cmo_node.side_effect = Exception("simulated CMO crash")
+    app = build_graph()
+    result = app.invoke({"idea": "AI-powered plant disease detector for farmers"})
+
+    assert result["status"] == "done"
+    assert result["cmo_output"] == {"market": {}, "competitors": [], "persona": {}, "gtm_strategy": ""}
+    assert any("cmo failed" in e for e in result.get("errors", []))
