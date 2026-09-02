@@ -64,8 +64,8 @@ class CMOAgent:
             f"- {r.get('title','')}: {r.get('content','')[:500]}" for r in results
         )
         system = (
-            "You are a market analyst. Extract EVERY distinct competitor "
-            "mentioned in the text below — do not limit yourself to one. "
+            "You are a market analyst. Extract UP TO 8 distinct competitors "
+            "mentioned in the text below — prioritize the most relevant/prominent ones. "
             "Respond ONLY as a JSON list, no other text.\n"
             "Format: [{\"name\": \"...\", \"summary\": \"...\"}]\n"
             "Keep each summary to one short sentence — the list may be long, "
@@ -75,7 +75,7 @@ class CMOAgent:
         # long-list extraction prompt — confirmed via isolated testing. Use the
         # default QUALITY_MODEL here; this call only fires once per pipeline run
         # so the token cost difference is negligible.
-        raw = call_llm(prompt=raw_context, system=system, temperature=0.3)
+        raw = call_llm(prompt=raw_context, system=system, temperature=0.3, max_tokens=2048)
         raw = self._clean_json(raw)
         try:
             return json.loads(raw)
