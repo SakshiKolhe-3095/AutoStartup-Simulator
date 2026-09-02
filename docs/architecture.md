@@ -123,3 +123,47 @@ demo practice? Switch some agents to local Ollama entirely to reduce Groq load?
   on this machine (WinError 10061), falls back to Groq correctly.
 - STILL TO DO: run scripts/batch_test.py end-to-end tomorrow with fresh quota to 
   confirm real-world fix; review results for any remaining parse/truncation issues.
+
+
+  ## Week 9 COMPLETE — Batch hardening results (10/10 success)
+Ran scripts/batch_test.py against 10 diverse ideas with fresh Groq quota (Aug 22).
+Result: 10/10 succeeded, 0 errors, 0 crashes. Avg runtime ~95s/idea (range 60-112s).
+Confirms all Aug 20 fixes (model migration, max_tokens, cmo_agent prompt fix, node-level
+error handling) work correctly end-to-end under real conditions.
+Note: investor_score returned 10/10 on every single idea — current score_pitch logic
+scores based on "questions answered" not answer quality, so this may need revisiting
+in Week 8 investor-loop polish to be a meaningful signal for the demo.
+Week 9 hardening goal: COMPLETE.
+
+
+## Known daily-quota pattern
+Groq's 200k/day limit for gpt-oss-120b gets exhausted after ~6-8 full pipeline runs
+in a testing session (confirmed Aug 20 and Aug 22). Real-world verification of any
+fix needs to happen either early in a session or on a fresh day — pytest (mocked)
+remains reliable regardless of quota state.
+
+## Fixed — scan_competitors empty response on FAST_MODEL
+gpt-oss-20b reliably returned empty completions for the competitor-extraction prompt
+(confirmed via isolated debug script — QUALITY_MODEL returned valid JSON, FAST_MODEL
+returned "" every time). Switched scan_competitors back to QUALITY_MODEL. Not yet
+verified end-to-end in a real pipeline run due to same-day quota exhaustion — needs
+fresh-quota confirmation.
+
+
+## Week 8 COMPLETE — Investor loop polish (Yeshita)
+- score_pitch rewritten: LLM-based quality scoring (was previously always 10/10, 
+  just counting answered questions) — found during Wk9 batch testing.
+- Question bank expanded from ~20 to ~40 questions across all categories.
+- Rebuttal loop upgraded from single shared pool of 2 to per-question (up to 2 
+  rounds/question, 4 total cap for demo-time safety).
+- Two mock-shadowing bugs fixed along the way (generate_rebuttal local import, 
+  score_pitch's own call_llm import) — same recurring pattern, now fixed here too.
+Not yet verified with a real end-to-end run (Groq daily quota exhausted today) — 
+needs fresh-quota confirmation tomorrow, same as prior fixes.
+
+## Week 8/9 fully verified with fresh quota (Sept 2)
+Real (non-mocked) pipeline run confirmed: status=done, investor_score varies correctly 
+(scored 8, not flat 10), multi-round rebuttals firing with real evidence-based defenses, 
+competitors list populated cleanly (8 entries, no truncation) after capping extraction 
+to "up to 8" instead of "every competitor" — root cause was an unbounded prompt 
+instruction, not just token limits. All Week 8/9 work now genuinely closed.

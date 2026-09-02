@@ -1,3 +1,4 @@
+# torch installed separately with CUDA 12.8 index — see README
 langgraph==0.2.60
 langchain==0.3.13
 langchain-community==0.3.13
@@ -13,5 +14,4 @@ beautifulsoup4==4.12.3
 python-pptx==1.0.2
 pytest==8.3.4
 pytest-asyncio==0.25.0
-beautifulsoup4==4.12.3ollama==0.6.2
 playwright==1.62.0

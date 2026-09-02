@@ -4,42 +4,60 @@
     "Who exactly is your first paying customer?",
     "What stops a bigger player from copying this in 6 months?",
     "What's your unfair advantage / moat?",
-    "How do you acquire your first 100 customers?"
+    "How do you acquire your first 100 customers?",
+    "What's the one metric that matters most right now, and why?",
+    "What would make this fail?",
+    "Why now — what's changed that makes this the right time?"
   ],
   "market": [
     "How did you calculate your TAM — bottom-up or top-down?",
     "Who are your top 3 competitors and why will you win?",
-    "Is this market growing or shrinking?"
+    "Is this market growing or shrinking?",
+    "What's your realistic market share in 3 years, and how did you get that number?",
+    "What would have to be true for this market to be much bigger than you're claiming?"
   ],
   "product": [
     "What's the MVP scope and why did you cut what you cut?",
     "What's your tech stack and why that choice?",
-    "How do you handle scale if you 10x users overnight?"
+    "How do you handle scale if you 10x users overnight?",
+    "What's the hardest technical problem you still haven't solved?",
+    "How much of this could a competitor rebuild with off-the-shelf AI tools in a weekend?"
   ],
   "financial": [
     "What's your burn rate and runway?",
     "What are your unit economics — CAC vs LTV?",
-    "How much are you raising and what's it for specifically?"
+    "How much are you raising and what's it for specifically?",
+    "What's your path to profitability, and what has to happen to get there?",
+    "What are your assumptions most likely to be wrong about?"
   ],
   "team": [
     "Why is this team the right team to build this?",
-    "What happens if a co-founder leaves?"
+    "What happens if a co-founder leaves?",
+    "What key hire do you need next, and why haven't you made it yet?",
+    "What's a mistake you've already made on this, and what did you learn?"
   ],
-
-"saas": [
+  "saas": [
     "What's your churn rate assumption and why?",
-    "Why not just a plugin for an existing tool instead of a new platform?"
+    "Why not just a plugin for an existing tool instead of a new platform?",
+    "What's your expansion revenue strategy — upsell, cross-sell, seat growth?",
+    "How sticky is this once a customer adopts it — what's the switching cost?"
   ],
   "marketplace": [
     "How do you solve the chicken-and-egg problem — supply or demand first?",
-    "What's your take rate and is it sustainable?"
+    "What's your take rate and is it sustainable?",
+    "What stops supply or demand from disintermediating you once trust is established?",
+    "How do you ensure quality/trust on both sides without heavy manual moderation?"
   ],
   "mobile_app": [
     "What's your day-30 retention target?",
-    "Why would this not just be a feature inside a bigger app?"
+    "Why would this not just be a feature inside a bigger app?",
+    "What's your organic vs paid acquisition split, and why?",
+    "How do you handle platform risk — App Store/Play Store policy changes?"
   ],
   "consumer": [
     "What's your CAC and how does it compare to LTV?",
-    "Why will this not get commoditized by a bigger retailer?"
-  ]  
+    "Why will this not get commoditized by a bigger retailer?",
+    "What's your repeat purchase rate, and what drives it?",
+    "How defensible is this once a copycat undercuts you on price?"
+  ]
 }

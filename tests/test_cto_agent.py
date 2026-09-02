@@ -84,12 +84,18 @@ def test_run_produces_full_output(monkeypatch):
         "backend.agents.cto_agent.save_landing_page",
         lambda idea, html: "data/landing_pages/test.html",
     )
+    monkeypatch.setattr(
+        "backend.agents.cto_agent.deploy_to_netlify",
+        lambda idea, html: {"url": "https://fake-site.netlify.app", "success": True},
+    )
 
+    
     result = agent.run("AI note-taking app")
     assert result["category"] == "saas"
     assert result["landing_page_path"] == "data/landing_pages/test.html"
     assert result["tech_stack"]["frontend"] == "Next.js"
     assert result["landing_page_validation"]["valid"] is True
+    assert result["landing_page_url"] == "https://fake-site.netlify.app"
 
 
 def test_cto_node_returns_cto_output_key(monkeypatch):

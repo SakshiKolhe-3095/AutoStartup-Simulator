@@ -20,10 +20,11 @@ CFO_JSON = '{"amount": "$250k"}'
 
 
 @_mock_web_search_tool()
+@patch("backend.agents.investor_agent.call_llm", return_value="8")
 @patch("backend.agents.cmo_agent.call_llm", return_value=CMO_JSON)
 @patch("backend.agents.cfo_agent.call_llm", return_value=CFO_JSON)
 @patch("backend.agents.ceo_agent.call_llm", return_value="Mocked pitch narrative.")
-def test_graph_runs_with_valid_idea(mock_ceo_llm, mock_cfo_llm, mock_cmo_llm, mock_web_search):
+def test_graph_runs_with_valid_idea(mock_ceo_llm, mock_cfo_llm, mock_cmo_llm, mock_investor_score_llm, mock_web_search):
     app = build_graph()
     result = app.invoke({"idea": "AI-powered plant disease detector for farmers"})
 
@@ -36,7 +37,6 @@ def test_graph_runs_with_valid_idea(mock_ceo_llm, mock_cfo_llm, mock_cmo_llm, mo
     assert len(result["investor_questions"]) > 0
     assert len(result["investor_transcript"]) == len(result["investor_questions"])
     assert result["investor_score"] is not None
-
 
 @_mock_web_search_tool()
 @patch("backend.agents.cmo_agent.call_llm", return_value=CMO_JSON)
@@ -97,10 +97,11 @@ def test_no_rebuttal_when_answer_strong(
 
 
 @_mock_web_search_tool()
+@patch("backend.agents.investor_agent.call_llm", return_value="8")
 @patch("backend.agents.cmo_agent.call_llm", return_value=CMO_JSON)
 @patch("backend.agents.cfo_agent.call_llm", return_value=CFO_JSON)
 @patch("backend.agents.ceo_agent.call_llm", return_value="Mocked pitch narrative.")
-def test_status_is_done_on_successful_run(mock_ceo_llm, mock_cfo_llm, mock_cmo_llm, mock_web_search):
+def test_status_is_done_on_successful_run(mock_ceo_llm, mock_cfo_llm, mock_cmo_llm, mock_investor_score_llm, mock_web_search):
     app = build_graph()
     result = app.invoke({"idea": "AI-powered plant disease detector for farmers"})
     assert result["status"] == "done"
@@ -119,9 +120,11 @@ def test_cfo_output_reflects_cmo_market_sizing(mock_ceo_llm, mock_cfo_llm, mock_
     assert result["cmo_output"]["market"]["tam"] == "$1B"
     assert result["cfo_output"] is not None
 
+@patch("backend.agents.investor_agent.call_llm", return_value="8")
+@patch("backend.agents.cfo_agent.call_llm", return_value=CFO_JSON)
 @patch("backend.agents.ceo_agent.call_llm", return_value="Mocked pitch narrative.")
 @patch("backend.orchestration.graph.cmo_node")
-def test_cmo_node_failure_does_not_crash_pipeline(mock_cmo_node, mock_llm):
+def test_cmo_node_failure_does_not_crash_pipeline(mock_cmo_node, mock_llm, mock_cfo_llm, mock_investor_score_llm):
     mock_cmo_node.side_effect = Exception("simulated CMO crash")
     app = build_graph()
     result = app.invoke({"idea": "AI-powered plant disease detector for farmers"})

@@ -1,9 +1,11 @@
 """Tests for ceo_agent"""
+from unittest.mock import patch
 from backend.agents.ceo_agent import (
     parse_idea,
     synthesize,
     defend_rebuttal,
     answer_investor_questions,
+    call_llm
 )
 
 
@@ -118,5 +120,24 @@ def test_answer_investor_questions_caps_rebuttals_at_two(monkeypatch):
         "investor_questions": [f"Q{i}" for i in range(5)],
     }
     result = answer_investor_questions(state)
-    rebuttal_count = sum(1 for e in result["investor_transcript"] if "rebuttal" in e)
-    assert rebuttal_count == 2
+    # global cap is now 4 total rounds (MAX_TOTAL_ROUNDS), not "2 questions with a rebuttal"
+    total_rounds = sum(len(e.get("rounds", [])) for e in result["investor_transcript"])
+    assert total_rounds == 4
+    
+@patch("backend.agents.ceo_agent.call_llm")
+@patch("backend.agents.investor_agent.call_llm")
+def test_answer_investor_questions_allows_two_rounds_per_question(mock_investor_llm, mock_ceo_llm):
+    import itertools
+    mock_ceo_llm.side_effect = itertools.cycle(["Weak answer.", "Better defense.", "Even better defense."])
+    mock_investor_llm.return_value = "Still not convincing enough."
+
+    from backend.agents.ceo_agent import answer_investor_questions
+    state = {
+        "investor_questions": ["Q1?"],
+        "ceo_narrative": "Some narrative.",
+    }
+    result = answer_investor_questions(state)
+    entry = result["investor_transcript"][0]
+
+    assert len(entry["rounds"]) == 2  # hit the per-question cap
+    assert entry["rebuttal"] == entry["rounds"][0]["rebuttal"]
