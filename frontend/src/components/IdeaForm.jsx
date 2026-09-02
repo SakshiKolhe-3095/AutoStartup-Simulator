@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 
-export default function IdeaForm({ onSubmit, loading }) {
+function IdeaForm({ onSubmit, loading }) {
   const [idea, setIdea] = useState("");
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (idea.trim()) onSubmit(idea);
   };
-
   return (
     <form onSubmit={handleSubmit} className="idea-form">
       <input
@@ -23,3 +21,5 @@ export default function IdeaForm({ onSubmit, loading }) {
     </form>
   );
 }
+
+export default memo(IdeaForm);

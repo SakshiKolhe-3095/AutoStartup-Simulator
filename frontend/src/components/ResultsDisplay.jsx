@@ -1,6 +1,7 @@
+import { memo } from "react";
 import InvestorScore from "./InvestorScore";
 
-export default function ResultsDisplay({ result }) {
+function ResultsDisplay({ result }) {
   if (!result) return null;
   const {
     deck_url,
@@ -49,3 +50,5 @@ export default function ResultsDisplay({ result }) {
     </div>
   );
 }
+
+export default memo(ResultsDisplay);
