@@ -160,3 +160,10 @@ fresh-quota confirmation.
   score_pitch's own call_llm import) — same recurring pattern, now fixed here too.
 Not yet verified with a real end-to-end run (Groq daily quota exhausted today) — 
 needs fresh-quota confirmation tomorrow, same as prior fixes.
+
+## Week 8/9 fully verified with fresh quota (Sept 2)
+Real (non-mocked) pipeline run confirmed: status=done, investor_score varies correctly 
+(scored 8, not flat 10), multi-round rebuttals firing with real evidence-based defenses, 
+competitors list populated cleanly (8 entries, no truncation) after capping extraction 
+to "up to 8" instead of "every competitor" — root cause was an unbounded prompt 
+instruction, not just token limits. All Week 8/9 work now genuinely closed.
